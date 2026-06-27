@@ -8,6 +8,7 @@
 #define ZE07_START_BYTE     0xFFu
 #define ZE07_GAS_TYPE_CO    0x04u
 #define ZE07_UNIT_PPM       0x03u
+#define ZE07_QAA_RESP_CMD   0x86u  /* echoed command byte in QAA response frame */
 
 /* Command frames (9 bytes each) */
 static const uint8_t CMD_SWITCH_QAA[] = { 0xFF,0x01,0x78,0x41,0x00,0x00,0x00,0x00,0x46 };
@@ -28,23 +29,33 @@ static uint8_t _ze07_checksum(const uint8_t *frame)
     return (uint8_t)((~sum) + 1u);
 }
 
-/** @brief Parse a validated 9-byte frame into ppm. Concentration = (byte4 * 256 + byte5) * 0.1 */
-static float _ze07_parse_ppm(const uint8_t *frame)
+/**
+ * @brief Parse a validated 9-byte frame into ppm.
+ *        IU mode  : concentration = (byte4 * 256 + byte5) * 0.1
+ *        QAA mode : concentration = (byte2 * 256 + byte3) * 0.1
+ */
+static float _ze07_parse_ppm(const uint8_t *frame, ZE07_Mode mode)
 {
-    uint16_t raw = ((uint16_t)frame[4] << 8) | frame[5];
+    uint16_t raw = (mode == ZE07_MODE_QAA) ? (((uint16_t)frame[2] << 8) | frame[3]) : (((uint16_t)frame[4] << 8) | frame[5]);
     return raw * 0.1f;
 }
 
-/** @brief Read and validate one 8-byte frame from the sensor */
+/** @brief Read and validate one 9-byte frame from the sensor */
 static ZE07_Status _ze07_read_frame(ZE07_Dev *dev, uint8_t *frame)
 {
     if (dev->hal.uart_read(frame, ZE07_FRAME_LEN) != 0) {
         return ZE07_ERROR_UART;
     }
 
-    if (frame[0] != ZE07_START_BYTE)  return ZE07_ERROR_FRAME;
-    if (frame[1] != ZE07_GAS_TYPE_CO) return ZE07_ERROR_FRAME;
-    if (frame[2] != ZE07_UNIT_PPM)    return ZE07_ERROR_FRAME;
+    if (frame[0] != ZE07_START_BYTE) return ZE07_ERROR_FRAME;
+
+    if (dev->mode == ZE07_MODE_QAA) {
+        if (frame[1] != ZE07_QAA_RESP_CMD) return ZE07_ERROR_FRAME;
+    } else {
+        if (frame[1] != ZE07_GAS_TYPE_CO) return ZE07_ERROR_FRAME;
+        if (frame[2] != ZE07_UNIT_PPM)    return ZE07_ERROR_FRAME;
+    }
+
     if (frame[8] != _ze07_checksum(frame)) return ZE07_ERROR_FRAME;
 
     return ZE07_OK;
@@ -89,19 +100,6 @@ ZE07_Status ZE07_Read(ZE07_Dev *dev, float *ppm)
         return s;
     }
 
-    *ppm = _ze07_parse_ppm(frame);
+    *ppm = _ze07_parse_ppm(frame, dev->mode);
     return ZE07_OK;
-}
-
-
-
-static unsigned char FuncCheckSum(unsigned char *i, unsigned char ln){
-    unsigned char j, tempq = 0;
-    i+=1;
-    for(j = 0; j < (ln-2); j++){
-        tempq += *i;
-        i++;
-    }
-    tempq = (~tempq) + 1;
-    return tempq;
 }

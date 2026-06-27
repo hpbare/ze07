@@ -1,0 +1,10 @@
+idf_component_register(
+    SRCS
+       "ze07_eg.c"
+    INCLUDE_DIRS
+        "."
+    REQUIRES
+        ze07
+        driver
+        esp_driver_uart
+)
