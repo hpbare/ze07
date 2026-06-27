@@ -65,9 +65,8 @@ static ZE07_Status _ze07_read_frame(ZE07_Dev *dev, uint8_t *frame)
  * Public API
  * ---------------------------------------------------------------------- */
 
-ZE07_Status ZE07_Init(ZE07_Dev *dev, const ZE07_Hal *hal)
+ZE07_Status ZE07_Init(ZE07_Dev *dev)
 {
-    dev->hal  = *hal;
     dev->mode = ZE07_MODE_IU;
     return ZE07_OK;
 }

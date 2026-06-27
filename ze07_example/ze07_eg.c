@@ -68,13 +68,13 @@ static void ze07_task(void *arg)
 {
     (void)arg;
 
-    ZE07_Hal hal = {
-        .uart_read  = hal_uart_read,
-        .uart_write = hal_uart_write,
+    ZE07_Dev dev = {
+        .hal = {
+            .uart_read  = hal_uart_read,
+            .uart_write = hal_uart_write
+        }
     };
-
-    ZE07_Dev dev;
-    ZE07_Status st = ZE07_Init(&dev, &hal);
+    ZE07_Status st = ZE07_Init(&dev);
     if (st != ZE07_OK) {
         ESP_LOGE(TAG, "Failed to init ZE07: %d", st);
         vTaskDelete(NULL);

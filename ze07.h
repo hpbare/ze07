@@ -51,13 +51,11 @@ typedef struct {
 } ZE07_Dev;
 
 /**
- * @brief Initialize device, inject HAL and set default mode (ZE07_MODE_IU).
- *        Does NOT communicate with the sensor.
+ * @brief Initialize device.
  * @param dev pointer to device handle.
- * @param hal pointer to HAL callbacks.
  * @return ZE07_OK on success, others on fail.
  */
-ZE07_Status ZE07_Init(ZE07_Dev *dev, const ZE07_Hal *hal);
+ZE07_Status ZE07_Init(ZE07_Dev *dev);
 
 /**
  * @brief Switch communication mode and send corresponding command frame.
