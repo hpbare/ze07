@@ -43,20 +43,32 @@ static float _ze07_parse_ppm(const uint8_t *frame, ZE07_Mode mode)
 /** @brief Read and validate one 9-byte frame from the sensor */
 static ZE07_Status _ze07_read_frame(ZE07_Dev *dev, uint8_t *frame)
 {
-    if (dev->hal.uart_read(frame, ZE07_FRAME_LEN) != 0) {
+    uint8_t b;
+    int tries = 0;
+
+    do {
+        if (dev->hal.uart_read(&b, 1) != 0) {
+            return ZE07_ERROR_UART;
+        }
+        if (++tries > ZE07_FRAME_LEN * 3) {
+            return ZE07_ERROR_FRAME;
+        }
+    } while (b != ZE07_START_BYTE);
+
+    frame[0] = b;
+
+    if (dev->hal.uart_read(&frame[1], ZE07_FRAME_LEN - 1) != 0) {
         return ZE07_ERROR_UART;
     }
 
-    if (frame[0] != ZE07_START_BYTE) return ZE07_ERROR_FRAME;
-
     if (dev->mode == ZE07_MODE_QAA) {
-        if (frame[1] != ZE07_QAA_RESP_CMD) return ZE07_ERROR_FRAME;
+        if (frame[1] != ZE07_QAA_RESP_CMD)  return ZE07_ERROR_FRAME;
     } else {
-        if (frame[1] != ZE07_GAS_TYPE_CO) return ZE07_ERROR_FRAME;
-        if (frame[2] != ZE07_UNIT_PPM)    return ZE07_ERROR_FRAME;
+        if (frame[1] != ZE07_GAS_TYPE_CO)   return ZE07_ERROR_FRAME;
+        if (frame[2] != ZE07_UNIT_PPM)      return ZE07_ERROR_FRAME;
     }
 
-    if (frame[8] != _ze07_checksum(frame)) return ZE07_ERROR_FRAME;
+    if (frame[8] != _ze07_checksum(frame))  return ZE07_ERROR_FRAME;
 
     return ZE07_OK;
 }
