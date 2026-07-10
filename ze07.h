@@ -51,8 +51,9 @@ typedef struct {
 } ZE07_Dev;
 
 /**
- * @brief Initialize device.
+ * @brief Initialize device, defaults to IU mode.
  * @param dev pointer to device handle.
+ * @note Read one frame to confirm sensors presence.
  * @return ZE07_OK on success, others on fail.
  */
 ZE07_Status ZE07_Init(ZE07_Dev *dev);

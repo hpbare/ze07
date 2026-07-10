@@ -79,8 +79,9 @@ static ZE07_Status _ze07_read_frame(ZE07_Dev *dev, uint8_t *frame)
 
 ZE07_Status ZE07_Init(ZE07_Dev *dev)
 {
+    uint8_t frame[ZE07_FRAME_LEN];
     dev->mode = ZE07_MODE_IU;
-    return ZE07_OK;
+    return _ze07_read_frame(dev, frame);
 }
 
 ZE07_Status ZE07_SetMode(ZE07_Dev *dev, ZE07_Mode mode)
